@@ -1,6 +1,6 @@
 import os
 import sys
-from agent import create_agent
+from agent.graph import create_agent
 
 def main():
     print("Initializing LangChain Gemini Agent...")
