@@ -33,3 +33,5 @@ def run_command(command: str) -> dict:
             "stderr": f"Failed to execute command: {str(e)}",
             "exit_code": -1
         }
+
+# This is a test comment.
