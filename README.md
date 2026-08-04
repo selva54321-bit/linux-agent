@@ -17,7 +17,9 @@ This project was originally a simple, single-file script that blindly executed b
 ```text
 linux-agent/
 ├── main.py                 # The entry point and interactive REPL chat loop
-├── agent.py                # Initializes the Gemini LLM, tools, and the LangGraph agent
+├── agent/
+│   ├── graph.py            # Initializes the Gemini LLM, tools, and the LangGraph agent
+│   └── state.py            # Shared tool and agent state models
 ├── tools/
 │   ├── __init__.py         # Exports ALL_TOOLS for the agent to bind
 │   ├── terminal.py         # run_command(): The fallback terminal execution tool
