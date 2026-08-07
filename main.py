@@ -3,7 +3,7 @@ import sys
 from agent.graph import create_agent
 
 def main():
-    print("Initializing LangChain Gemini Agent...")
+    print("Initializing Agent...")
     try:
         agent = create_agent()
     except ValueError as e:
@@ -11,7 +11,7 @@ def main():
         print("Please export GEMINI_API_KEY='your_api_key'")
         sys.exit(1)
         
-    print("🤖 LangChain Agent initialized! Specialized tools loaded. (Type 'exit' to quit)")
+    print("🤖 Agent initialized! Specialized tools loaded. (Type 'exit' to quit)")
     
     # Configuration for conversation memory (if using a checkpointer)
     config = {"configurable": {"thread_id": "repl_session_1"}}
