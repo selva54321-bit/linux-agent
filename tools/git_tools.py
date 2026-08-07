@@ -7,13 +7,14 @@ from langchain.tools import tool
 # Add the parent directory to sys.path so we can import agent.state
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from agent.state import ToolResult
+from agent.workspace import workspace
 
 @tool
 def git_status() -> dict:
     """Returns the current git status."""
     start_time = time.time()
     try:
-        result = subprocess.run(["git", "status"], capture_output=True, text=True)
+        result = subprocess.run(["git", "status"], cwd=str(workspace.root), capture_output=True, text=True)
         return ToolResult(
             success=result.returncode == 0,
             stdout=result.stdout,
@@ -35,7 +36,7 @@ def git_log(n: int = 5) -> dict:
     """Returns the last n commits from git log."""
     start_time = time.time()
     try:
-        result = subprocess.run(["git", "log", f"-n{n}"], capture_output=True, text=True)
+        result = subprocess.run(["git", "log", f"-n{n}"], cwd=str(workspace.root), capture_output=True, text=True)
         return ToolResult(
             success=result.returncode == 0,
             stdout=result.stdout,

@@ -6,13 +6,15 @@ import sys
 # Add the parent directory to sys.path so we can import agent.state
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from agent.state import ToolResult
+from agent.workspace import workspace
 
 @tool
 def read_file(path: str) -> dict:
     """Reads the contents of a file at the given path."""
     start_time = time.time()
     try:
-        with open(path, 'r') as f:
+        full_path = workspace.resolve(path)
+        with open(full_path, 'r') as f:
             content = f.read()
         return ToolResult(
             success=True,
@@ -33,8 +35,9 @@ def write_file(path: str, content: str) -> dict:
     """Writes the content to the given file path. Overwrites if it exists."""
     start_time = time.time()
     try:
-        os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-        with open(path, 'w') as f:
+        full_path = workspace.resolve(path)
+        os.makedirs(full_path.parent, exist_ok=True)
+        with open(full_path, 'w') as f:
             f.write(content)
         return ToolResult(
             success=True,
@@ -55,7 +58,8 @@ def append_file(path: str, content: str) -> dict:
     """Appends content to the end of a file at the given path."""
     start_time = time.time()
     try:
-        with open(path, 'a') as f:
+        full_path = workspace.resolve(path)
+        with open(full_path, 'a') as f:
             f.write(content)
         return ToolResult(
             success=True,
@@ -76,7 +80,8 @@ def list_directory(path: str = ".") -> dict:
     """Lists the contents of the given directory path."""
     start_time = time.time()
     try:
-        items = os.listdir(path)
+        full_path = workspace.resolve(path)
+        items = os.listdir(full_path)
         content = "\n".join(items) if items else "Directory is empty."
         return ToolResult(
             success=True,

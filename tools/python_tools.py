@@ -7,13 +7,14 @@ from langchain.tools import tool
 # Add the parent directory to sys.path so we can import agent.state
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from agent.state import ToolResult
+from agent.workspace import workspace
 
 @tool
 def create_virtualenv(path: str = ".venv") -> dict:
     """Creates a Python virtual environment at the specified path."""
     start_time = time.time()
     try:
-        subprocess.run(["python3", "-m", "venv", path], check=True, capture_output=True, text=True)
+        subprocess.run(["python3", "-m", "venv", path], cwd=str(workspace.root), check=True, capture_output=True, text=True)
         return ToolResult(
             success=True,
             stdout=f"Successfully created virtual environment at {path}",
@@ -40,7 +41,7 @@ def pip_install(package: str) -> dict:
     """Installs a Python package using pip."""
     start_time = time.time()
     try:
-        result = subprocess.run(["pip", "install", package], capture_output=True, text=True)
+        result = subprocess.run(["pip", "install", package], cwd=str(workspace.root), capture_output=True, text=True)
         return ToolResult(
             success=result.returncode == 0,
             stdout=result.stdout,
