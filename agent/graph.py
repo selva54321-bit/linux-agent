@@ -1,77 +1,82 @@
 import os
-
-from langchain_google_genai import ChatGoogleGenerativeAI
+os.environ.setdefault("LANGGRAPH_STRICT_MSGPACK", "false")
+# from langchain_community.chat_models import ChatOllama
 from langchain_ollama import ChatOllama
-
-from langgraph.prebuilt import create_react_agent
+from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
+from functools import partial
 
-from tools import ALL_TOOLS
+from agent.state import AgentState
+from agent.nodes import (
+    planner_node,
+    web_search_node,
+    command_generator_node,
+    execution_node,
+    verification_node,
+    reflection_node
+)
 
-
-def load_system_prompt() -> str:
-    # graph.py is in agent/ so we go up one level
-    prompt_path = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)),
-        "prompts",
-        "system_prompt.txt",
-    )
-
-    try:
-        with open(prompt_path, "r") as f:
-            return f.read()
-    except FileNotFoundError:
-        return "You are a helpful Linux agent."
-
-
-# ---------------- GEMINI ----------------
-# def create_agent():
-#     # Ensure API key is set
-#     if not os.environ.get("GEMINI_API_KEY"):
-#         raise ValueError("GEMINI_API_KEY environment variable not set")
-#
-#     # Initialize the LLM
-#     llm = ChatGoogleGenerativeAI(
-#         model="gemini-2.5-flash",
-#         temperature=0.0
-#     )
-#
-#     system_prompt = load_system_prompt()
-#
-#     # Checkpointer for session memory
-#     memory = MemorySaver()
-#
-#     # Create the React Agent using LangGraph
-#     agent_executor = create_react_agent(
-#         llm,
-#         ALL_TOOLS,
-#         prompt=system_prompt,
-#         checkpointer=memory
-#     )
-#
-#     return agent_executor
-
-
-# ---------------- OLLAMA ----------------
 def create_agent():
     # Initialize the Ollama LLM
     llm = ChatOllama(
-        model="gemma4:e4b",          # Change to your installed model if needed
+        model="gemma4:e4b",
         base_url="http://localhost:11434",
         temperature=0.0,
     )
-
-    system_prompt = load_system_prompt()
-
+    
+    # Initialize StateGraph
+    workflow = StateGraph(AgentState)
+    
+    # Add Nodes
+    # We use functools.partial to pass the llm instance where needed
+    workflow.add_node("planner", partial(planner_node, llm=llm))
+    workflow.add_node("web_search", web_search_node)
+    workflow.add_node("command_generator", partial(command_generator_node, llm=llm))
+    workflow.add_node("executor", execution_node)
+    workflow.add_node("verifier", verification_node)
+    workflow.add_node("reflector", partial(reflection_node, llm=llm))
+    
+    # Define Edges
+    workflow.set_entry_point("planner")
+    
+    # Planner -> Web Search or Command Generator
+    workflow.add_conditional_edges(
+        "planner",
+        lambda state: "web_search" if state.get("needs_search") else "command_generator",
+        {
+            "web_search": "web_search",
+            "command_generator": "command_generator"
+        }
+    )
+    
+    workflow.add_edge("web_search", "command_generator")
+    workflow.add_edge("command_generator", "executor")
+    workflow.add_edge("executor", "verifier")
+    
+    # Verifier -> END or Reflector
+    workflow.add_conditional_edges(
+        "verifier",
+        lambda state: "end" if state.get("status") == "success" else ("end" if state.get("status") == "aborted" else "reflector"),
+        {
+            "end": END,
+            "reflector": "reflector"
+        }
+    )
+    
+    # Reflector -> Command Generator (retry) or END (max retries)
+    workflow.add_conditional_edges(
+        "reflector",
+        lambda state: "command_generator" if state.get("status") == "retrying" else "end",
+        {
+            "command_generator": "command_generator",
+            "end": END
+        }
+    )
+    
     # Checkpointer for session memory
     memory = MemorySaver()
-
-    # Create the React Agent using LangGraph
-    agent_executor = create_react_agent(
-        llm,
-        ALL_TOOLS,
-        prompt=system_prompt,
-        checkpointer=memory,
-    )
-
-    return agent_executor
+    
+    # Compile the graph
+    app = workflow.compile(checkpointer=memory)
+    
+    return app

@@ -24,38 +24,26 @@ def main():
                 
             print("\nAgent is thinking...")
             
-            # Stream the agent's thought process and tool actions
-            # langgraph prebuilt agent streams state updates
+            # The agent takes "goal" as input
             events = agent.stream(
-                {"messages": [("user", user_input)]}, 
+                {"goal": user_input, "retry_count": 0, "history": []}, 
                 config=config, 
                 stream_mode="updates"
             )
             
             for event in events:
                 for node_name, node_state in event.items():
-                    messages = node_state.get("messages", [])
-                    if not messages:
-                        continue
+                    print(f"\n[Completed Node: {node_name.upper()}]")
+                    if "status" in node_state:
+                        print(f"Status: {node_state['status']}")
                         
-                    message = messages[-1]
-                    
-                    if node_name == "agent" and hasattr(message, "tool_calls") and message.tool_calls:
-                        for tool_call in message.tool_calls:
-                            print(f"  [Calling Tool]: {tool_call['name']} with args: {tool_call['args']}")
-                            
-                    elif node_name == "tools":
-                        # Tool result
-                        # Truncate for display
-                        display_content = message.content[:200] + "..." if len(message.content) > 200 else message.content
-                        print(f"  [Tool Result]: {display_content}")
-                        
-            # After the stream finishes, print the final AI response
-            # The agent mutates the state, so the last message is from the AI.
             state = agent.get_state(config)
-            final_message = state.values["messages"][-1]
-            if final_message.type == "ai" and final_message.content:
-                print(f"\nAgent: {final_message.content}")
+            if state.values.get("status") == "success":
+                print("\nAgent: Task completed successfully.")
+            elif state.values.get("status") == "aborted":
+                print("\nAgent: Task aborted.")
+            else:
+                print(f"\nAgent: Task failed or ended with status: {state.values.get('status')}")
                 
         except KeyboardInterrupt:
             print("\nExiting...")
