@@ -1,5 +1,5 @@
 import os
-os.environ.setdefault("LANGGRAPH_STRICT_MSGPACK", "false")
+os.environ.setdefault("LANGGRAPH_STRICT_MSGPACK", "true")
 # from langchain_community.chat_models import ChatOllama
 from langchain_ollama import ChatOllama
 from langgraph.graph import StateGraph, END
