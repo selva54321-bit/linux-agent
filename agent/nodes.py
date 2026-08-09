@@ -247,3 +247,24 @@ def reflection_node(state: AgentState, llm):
     print(f"Reasoning: {reasoning}")
     
     return {"error_reasoning": reasoning, "retry_count": retry_count, "status": "retrying"}
+
+def response_node(state: AgentState):
+    """Returns the execution result to the user."""
+    print("\n--- RESPONSE ---")
+
+    history = state.get("history", [])
+
+    if not history:
+        print("Task completed successfully.")
+        return {"status": "success"}
+
+    result = history[-1]
+
+    if result.get("stdout"):
+        print(result["stdout"].strip())
+    elif result.get("stderr"):
+        print(result["stderr"].strip())
+    else:
+        print("Task completed successfully.")
+
+    return {"status": "success"}

@@ -13,7 +13,8 @@ from agent.nodes import (
     command_generator_node,
     execution_node,
     verification_node,
-    reflection_node
+    reflection_node,
+    response_node
 )
 
 def create_agent():
@@ -35,6 +36,7 @@ def create_agent():
     workflow.add_node("executor", execution_node)
     workflow.add_node("verifier", verification_node)
     workflow.add_node("reflector", partial(reflection_node, llm=llm))
+    workflow.add_node("response", response_node)
     
     # Define Edges
     workflow.set_entry_point("planner")
@@ -54,14 +56,28 @@ def create_agent():
     workflow.add_edge("executor", "verifier")
     
     # Verifier -> END or Reflector
+    # workflow.add_conditional_edges(
+    #     "verifier",
+    #     lambda state: "end" if state.get("status") == "success" else ("end" if state.get("status") == "aborted" else "reflector"),
+    #     {
+    #         "end": END,
+    #         "reflector": "reflector"
+    #     }
+    # )
+
     workflow.add_conditional_edges(
         "verifier",
-        lambda state: "end" if state.get("status") == "success" else ("end" if state.get("status") == "aborted" else "reflector"),
+        lambda state: "response" if state.get("status") == "success" else ("end" if state.get("status") == "aborted" else "reflector"),
         {
+            "response": "response",
             "end": END,
             "reflector": "reflector"
         }
     )
+
+    workflow.add_edge("response", END)
+
+
     
     # Reflector -> Command Generator (retry) or END (max retries)
     workflow.add_conditional_edges(
