@@ -31,30 +31,6 @@ linux-agent/
 └── README.md               # You are here
 ```
 
-## Setup & Installation
-
-This project uses `uv` (or standard `pip`) for dependency management.
-
-1. **Install Dependencies:**
-   ```bash
-   # Using uv:
-   uv add langchain langchain-google-genai langgraph
-   
-   # Or using pip:
-   pip install langchain langchain-google-genai langgraph
-   ```
-
-2. **Set your API Key:**
-   The agent requires a Google Gemini API key to run.
-   ```bash
-   export GEMINI_API_KEY="your_api_key_here"
-   ```
-
-3. **Run the Agent:**
-   ```bash
-   python main.py
-   ```
-
 ## Recent Changes (Phase 2 Refactor)
 * **Modularization:** Moved away from a single `simple_agent.py` to a structured directory (`main.py`, `agent.py`, `tools/`).
 * **Tool Specialization:** Replaced a single monolithic shell tool with modular tools (e.g., `read_file` instead of running `cat file.txt`).
