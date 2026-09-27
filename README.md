@@ -1,4 +1,4 @@
-# Linux Terminal AI Agent
+# Linux Terminal AI Agent 
 
 A robust, modular AI agent that operates in a Linux environment. Built using **LangChain**, **LangGraph**, and the **Google Gemini API**, this agent can reason about tasks, execute commands, manipulate files, and debug its own errors in a loop.
 
